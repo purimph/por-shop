@@ -1,25 +1,26 @@
-// use actix_web::{web, App, HttpServer};
+
+
+use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
-use sea_orm::{Database, DbErr};
 use std::env;
-// use std::sync::Arc;
-#[tokio::main]
-async fn main() -> Result<(), DbErr> {
+use sea_orm::Database;
+
+mod routes;
+mod services;
+mod controllers;
+mod entity;
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    println!("Attempting to connect to: {}", database_url);
-
-    match Database::connect(&database_url).await {
-        Ok(_) => {
-            println!(
-                "Connected leaw jaa!");
-            Ok(())
-        }
-        Err(e) => {
-            eprintln!(
-                "Connection Bor Dai: {:?}",e);
-            Err(e)
-        }
-    }
+    let db = Database::connect(database_url).await.unwrap();
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(db.clone()))
+            .configure(routes::configure_auth)
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }
