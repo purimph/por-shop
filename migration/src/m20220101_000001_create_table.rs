@@ -1,64 +1,45 @@
-use sea_orm_migration::{prelude::*, schema::*};
-
+use sea_orm_migration::prelude::*;
 #[derive(DeriveMigrationName)]
 pub struct Migration;
-
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-
         manager
             .create_table(
                 Table::create()
-                    .table(Users::Table)
+                    .table(User::Table)
                     .if_not_exists()
+                    .col(ColumnDef::new(User::Id).uuid().not_null().primary_key())
                     .col(
-                        ColumnDef::new(Users::Id)
-                            .integer()
-                            .not_null()
-                            .auto_increment()
-                            .primary_key(),
-                    )
-                    .col(
-                        ColumnDef::new(Users::Username)
+                        ColumnDef::new(User::Username)
                             .string()
                             .not_null()
                             .unique_key(),
                     )
+                    .col(ColumnDef::new(User::Email).string().not_null().unique_key())
+                    .col(ColumnDef::new(User::HashedPassword).string().not_null())
                     .col(
-                        ColumnDef::new(Users::Password)
-                            .string()
-                            .not_null(),
-                    )
-                    .col(
-                        ColumnDef::new(Users::Email)
-                            .string()
+                        ColumnDef::new(User::CreatedAt)
+                            .date_time()
                             .not_null()
-                            .unique_key(),
-                    )
-                    .col(
-                        ColumnDef::new(Users::CreatedAt)
-                            .timestamp_with_time_zone()
-                            .not_null()
+                            .default("now()".to_string()),
                     )
                     .to_owned(),
             )
             .await
     }
-
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Users::Table).to_owned())
+            .drop_table(Table::drop().table(User::Table).to_owned())
             .await
     }
 }
-
-#[derive(DeriveIden)]
-enum Users {
+#[derive(Iden)]
+pub enum User {
     Table,
     Id,
     Username,
-    Password,
     Email,
+    HashedPassword,
     CreatedAt,
 }
