@@ -1,5 +1,5 @@
+use crate::controllers::user::{login, register};
 use actix_web::web;
-use crate::controllers::user::{register, login};
 
 pub fn configure_auth(cfg: &mut web::ServiceConfig) {
     cfg.service(
