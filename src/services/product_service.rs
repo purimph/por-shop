@@ -1,6 +1,6 @@
 use crate::entity::products;
 use rust_decimal::Decimal;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait, Set};
 
 pub async fn get_all_products(db: &DatabaseConnection) -> Result<Vec<products::Model>, DbErr> {
     products::Entity::find().all(db).await
@@ -27,4 +27,11 @@ pub async fn create_product(
         created_at: Set(chrono::Utc::now()),
     };
     new_product.insert(db).await
+}
+
+pub async fn delete_product(
+    db: &DatabaseConnection,
+    product_id: uuid::Uuid,
+) -> Result<DeleteResult, DbErr> {
+    products::Entity::delete_by_id(product_id).exec(db).await
 }

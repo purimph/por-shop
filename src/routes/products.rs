@@ -1,4 +1,4 @@
-use crate::controllers::product::{create_product, get_product, get_products};
+use crate::controllers::product::{create_product, delete_product, get_product, get_products};
 use actix_web::web;
 
 pub fn configure_product(cfg: &mut web::ServiceConfig) {
@@ -6,6 +6,7 @@ pub fn configure_product(cfg: &mut web::ServiceConfig) {
         web::scope("/products")
             .route("", web::get().to(get_products))
             .route("/{id}", web::get().to(get_product))
-            .route("", web::post().to(create_product)),
+            .route("", web::post().to(create_product))
+            .route("/{id}", web::delete().to(delete_product)),
     );
 }

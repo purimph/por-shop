@@ -50,3 +50,15 @@ pub async fn create_product(
         Err(_) => HttpResponse::InternalServerError().body("Error najaa"),
     }
 }
+
+pub async fn delete_product(
+    db: web::Data<DatabaseConnection>,
+    product_id: web::Path<uuid::Uuid>,
+) -> HttpResponse {
+    println!("{}", product_id);
+    match product_service::delete_product(&db, product_id.into_inner()).await {
+        Ok(response) if response.rows_affected > 0 => HttpResponse::Ok().body("Deleted"),
+        Ok(_) => HttpResponse::NotFound().body("product not found"),
+        Err(_) => HttpResponse::InternalServerError().body("Error"),
+    }
+}

@@ -36,18 +36,30 @@ pub struct LoginData {
     pub username: String,
     pub password: String,
 }
+
 pub async fn login(data: web::Json<LoginData>, db: web::Data<DatabaseConnection>) -> HttpResponse {
-    if let Some(users) = user::Entity::find()
+    match user::Entity::find()
         .filter(user::Column::Username.eq(data.username.clone()))
         .one(&**db)
         .await
-        .unwrap()
     {
-        if verify_password(&data.password, &users.hashed_password) {
-            let token = generate_jwt(&users.id.to_string());
-            return HttpResponse::Ok().json(token);
+        Ok(Some(user)) => {
+            // หากพบผู้ใช้ ตรวจสอบรหัสผ่าน
+            if verify_password(&data.password, &user.hashed_password) {
+                let token = generate_jwt(&user.id.to_string());
+                return HttpResponse::Ok().json(token);
+            } else {
+                return HttpResponse::Unauthorized().body("Invalid username or password");
+            }
+        }
+        Ok(None) => {
+            // หากไม่พบผู้ใช้
+            return HttpResponse::Unauthorized().body("Invalid username or password");
+        }
+        Err(err) => {
+            // หากเกิดข้อผิดพลาดระหว่างการค้นหา
+            eprintln!("Database error: {}", err);
+            return HttpResponse::InternalServerError().body("Internal server error");
         }
     }
-
-    HttpResponse::Unauthorized().body("Invalid username or password")
 }
