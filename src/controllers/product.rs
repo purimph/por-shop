@@ -27,15 +27,15 @@ pub async fn get_product(
 #[serde_as]
 #[derive(Deserialize)]
 
-pub struct CreateProductRequest {
-    name: String,
-    description: Option<String>,
+pub struct ProductRequest {
+    pub name: String,
+    pub description: Option<String>,
     #[serde_as(as = "FromInto<Decimal>")]
-    price: Decimal,
+    pub price: Decimal,
 }
 
 pub async fn create_product(
-    data: web::Json<CreateProductRequest>,
+    data: web::Json<ProductRequest>,
     db: web::Data<DatabaseConnection>,
 ) -> HttpResponse {
     match product_service::create_product(
@@ -55,10 +55,20 @@ pub async fn delete_product(
     db: web::Data<DatabaseConnection>,
     product_id: web::Path<uuid::Uuid>,
 ) -> HttpResponse {
-    println!("{}", product_id);
     match product_service::delete_product(&db, product_id.into_inner()).await {
         Ok(response) if response.rows_affected > 0 => HttpResponse::Ok().body("Deleted"),
-        Ok(_) => HttpResponse::NotFound().body("product not found"),
+        Ok(_) => HttpResponse::NotFound().body("Product not found"),
         Err(_) => HttpResponse::InternalServerError().body("Error"),
+    }
+}
+
+pub async fn update_product(
+    data: web::Json<ProductRequest>,
+    db: web::Data<DatabaseConnection>,
+    product_id: web::Path<uuid::Uuid>,
+) -> HttpResponse {
+    match product_service::update_product(&db, product_id.into_inner(), data.into_inner()).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(_) => HttpResponse::InternalServerError().body("Error najaa"),
     }
 }

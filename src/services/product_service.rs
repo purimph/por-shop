@@ -1,6 +1,9 @@
-use crate::entity::products;
+use crate::{controllers::product::ProductRequest, entity::products};
 use rust_decimal::Decimal;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, DeleteResult, EntityTrait, Set};
+use sea_orm::{
+    ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, DbErr, DeleteResult, EntityTrait,
+    Set,
+};
 
 pub async fn get_all_products(db: &DatabaseConnection) -> Result<Vec<products::Model>, DbErr> {
     products::Entity::find().all(db).await
@@ -34,4 +37,19 @@ pub async fn delete_product(
     product_id: uuid::Uuid,
 ) -> Result<DeleteResult, DbErr> {
     products::Entity::delete_by_id(product_id).exec(db).await
+}
+
+pub async fn update_product(
+    db: &DatabaseConnection,
+    product_id: uuid::Uuid,
+    data_product: ProductRequest,
+) -> Result<products::Model, DbErr> {
+    let updated_product = products::ActiveModel {
+        id: Set(product_id),
+        name: Set(data_product.name),
+        description: Set(data_product.description),
+        price: Set(data_product.price),
+        created_at: NotSet,
+    };
+    updated_product.update(db).await
 }
