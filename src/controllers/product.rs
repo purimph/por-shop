@@ -1,10 +1,9 @@
-use crate::services::product_service;
+use crate::{error::APIError, services::product_service};
 use actix_web::{web, HttpResponse};
 use rust_decimal::Decimal;
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 use serde_with::{serde_as, FromInto};
-// use uuid::Uuid;
 
 pub async fn get_products(db: web::Data<DatabaseConnection>) -> HttpResponse {
     match product_service::get_all_products(&db).await {
@@ -66,9 +65,7 @@ pub async fn update_product(
     data: web::Json<ProductRequest>,
     db: web::Data<DatabaseConnection>,
     product_id: web::Path<uuid::Uuid>,
-) -> HttpResponse {
-    match product_service::update_product(&db, product_id.into_inner(), data.into_inner()).await {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(_) => HttpResponse::InternalServerError().body("Error najaa"),
-    }
+) -> Result<impl actix_web::Responder, APIError>{
+    let response = product_service::update_product(&db, product_id.into_inner(), data.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(response))
 }
