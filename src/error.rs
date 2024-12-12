@@ -5,6 +5,10 @@ use sea_orm::DbErr;
 use serde::Serialize;
 use validator::ValidationErrors;
 
+use crate::services::error::ServiceError;
+
+// use crate::services::error::ServiceError;
+
 #[derive(Debug, Display, From)]
 
 pub enum ApiError {
@@ -28,6 +32,16 @@ impl From<DbErr> for ApiError {
         }
     }
 }
+
+impl From<ServiceError> for ApiError {
+    fn from(err: ServiceError) -> Self {
+        match err {
+            ServiceError::Database(e) => ApiError::DatabaseError(e.to_string()),
+            _ => ApiError::NotFound("".into())
+        }
+    }
+}
+
 
 // impl From<ValidationErrors> for ApiError {
 //     fn from(err: ValidationErrors) -> Self {

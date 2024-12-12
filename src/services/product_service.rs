@@ -1,19 +1,29 @@
-use crate::{controllers::product::ProductRequest, entity::products};
+use crate::{controllers::product::ProductRequest, entity::products, repository};
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, DbErr, DeleteResult, EntityTrait,
-    Set,
+    DatabaseConnection, DbErr, DeleteResult
 };
 
-pub async fn get_all_products(db: &DatabaseConnection) -> Result<Vec<products::Model>, DbErr> {
-    products::Entity::find().all(db).await
+use super::error::ServiceError;
+
+pub async fn get_all_products(
+    db: &DatabaseConnection,
+) -> Result<Vec<products::Model>, ServiceError> {
+    // if true {
+    //     return Err(ServiceError::NotWork);
+    // }
+    repository::product::get_all_products(db)
+        .await
+        .map_err(|e| ServiceError::Database(e))
+    // products::Entity::find().all(db).await
 }
 
 pub async fn get_product_by_id(
     db: &DatabaseConnection,
     product_id: uuid::Uuid,
 ) -> Result<Option<products::Model>, DbErr> {
-    products::Entity::find_by_id(product_id).one(db).await
+    repository::product::get_product_by_id(db, product_id).await
+    // products::Entity::find_by_id(product_id).one(db).await
 }
 
 pub async fn create_product(
@@ -22,21 +32,14 @@ pub async fn create_product(
     description: Option<String>,
     price: Decimal,
 ) -> Result<products::Model, DbErr> {
-    let new_product = products::ActiveModel {
-        id: Set(uuid::Uuid::new_v4()),
-        name: Set(name),
-        description: Set(description),
-        price: Set(price),
-        created_at: Set(chrono::Utc::now()),
-    };
-    new_product.insert(db).await
+    repository::product::create_product(db, name, description, price).await
 }
 
 pub async fn delete_product(
     db: &DatabaseConnection,
     product_id: uuid::Uuid,
 ) -> Result<DeleteResult, DbErr> {
-    products::Entity::delete_by_id(product_id).exec(db).await
+    repository::product::delete_product(db, product_id).await
 }
 
 pub async fn update_product(
@@ -44,12 +47,5 @@ pub async fn update_product(
     product_id: uuid::Uuid,
     data_product: ProductRequest,
 ) -> Result<products::Model, DbErr> {
-    let updated_product = products::ActiveModel {
-        id: Set(product_id),
-        name: Set(data_product.name),
-        description: Set(data_product.description),
-        price: Set(data_product.price),
-        created_at: NotSet,
-    };
-    updated_product.update(db).await
+    repository::product::update_product(db, product_id, data_product).await
 }
