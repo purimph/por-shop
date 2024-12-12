@@ -1,8 +1,10 @@
 use crate::entity::user::{self, ActiveModel};
+use crate::error::ApiError;
 use crate::services::auth::{generate_jwt, hash_password, verify_password};
 use actix_web::{web, HttpResponse};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::Deserialize;
+use validator::Validate;
 
 #[derive(Deserialize)]
 pub struct RegisterData {
@@ -31,35 +33,33 @@ pub async fn register(
     HttpResponse::Ok().body("User registered")
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct LoginData {
     pub username: String,
+    #[validate(length(min = 8))]
     pub password: String,
 }
 
-pub async fn login(data: web::Json<LoginData>, db: web::Data<DatabaseConnection>) -> HttpResponse {
-    match user::Entity::find()
+pub async fn login(
+    data: web::Json<LoginData>,
+    db: web::Data<DatabaseConnection>,
+) -> Result<impl actix_web::Responder, ApiError> {
+    data.validate()?;
+    let user = user::Entity::find()
         .filter(user::Column::Username.eq(data.username.clone()))
-        .one(&**db)
-        .await
-    {
-        Ok(Some(user)) => {
-            // หากพบผู้ใช้ ตรวจสอบรหัสผ่าน
-            if verify_password(&data.password, &user.hashed_password) {
-                let token = generate_jwt(&user.id.to_string());
-                return HttpResponse::Ok().json(token);
-            } else {
-                return HttpResponse::Unauthorized().body("Invalid username or password");
-            }
-        }
-        Ok(None) => {
-            // หากไม่พบผู้ใช้
-            return HttpResponse::Unauthorized().body("Invalid username or password");
-        }
-        Err(err) => {
-            // หากเกิดข้อผิดพลาดระหว่างการค้นหา
-            eprintln!("Database error: {}", err);
-            return HttpResponse::InternalServerError().body("Internal server error");
-        }
+        .one(db.as_ref())
+        .await?
+        .ok_or(ApiError::AuthenticationError(
+            "Invalid username or password".into(),
+        ))?;
+
+    // หากพบผู้ใช้ ตรวจสอบรหัสผ่าน
+    if verify_password(&data.password, &user.hashed_password) {
+        let token = generate_jwt(&user.id.to_string());
+        return Ok(HttpResponse::Ok().json(token));
+    } else {
+        return Err(ApiError::AuthenticationError(
+            "Invalid username or password".into(),
+        ));
     }
 }

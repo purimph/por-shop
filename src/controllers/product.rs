@@ -1,4 +1,4 @@
-use crate::{error::APIError, services::product_service};
+use crate::{error::ApiError, services::product_service};
 use actix_web::{web, HttpResponse};
 use rust_decimal::Decimal;
 use sea_orm::DatabaseConnection;
@@ -65,7 +65,7 @@ pub async fn update_product(
     data: web::Json<ProductRequest>,
     db: web::Data<DatabaseConnection>,
     product_id: web::Path<uuid::Uuid>,
-) -> Result<impl actix_web::Responder, APIError>{
+) -> Result<impl actix_web::Responder, ApiError>{
     let response = product_service::update_product(&db, product_id.into_inner(), data.into_inner()).await?;
     Ok(HttpResponse::Ok().json(response))
 }
