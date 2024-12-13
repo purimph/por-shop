@@ -19,7 +19,6 @@ pub enum ApiError {
     NotFound(String),
 
     AuthenticationError(String),
-
     // #[display("Internal server error:{}", _0)]
     // InternalServerError(String),
 }
@@ -37,11 +36,10 @@ impl From<ServiceError> for ApiError {
     fn from(err: ServiceError) -> Self {
         match err {
             ServiceError::Database(e) => ApiError::DatabaseError(e.to_string()),
-            _ => ApiError::NotFound("".into())
+            _ => ApiError::NotFound("".into()),
         }
     }
 }
-
 
 // impl From<ValidationErrors> for ApiError {
 //     fn from(err: ValidationErrors) -> Self {
@@ -71,7 +69,6 @@ impl error::ResponseError for ApiError {
                 error: "Authentication error".to_string(),
                 message: msg.clone(),
             },
-
             // ApiError::InternalServerError(_) => ErrorResponse {
             //     error: "Internal server error".to_string(),
             //     message: "An unexpected error occurred".to_string(),

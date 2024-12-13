@@ -5,10 +5,10 @@ use std::env;
 
 mod controllers;
 mod entity;
-mod routes;
-mod services;
 mod error;
 mod repository;
+mod routes;
+mod services;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

@@ -26,7 +26,7 @@ pub async fn register(
         ..Default::default()
     };
 
-    if let Err(err) = new_user.insert(&**db).await {
+    if let Err(err) = new_user.insert(db.as_ref()).await {
         println!("Error inserting user: {}", err); // Debug print
         return HttpResponse::BadRequest().body("Error inserting user");
     }

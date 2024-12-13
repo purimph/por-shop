@@ -1,7 +1,7 @@
 use crate::{error::ApiError, services::product_service};
 use actix_web::{web, HttpResponse};
 use rust_decimal::Decimal;
-use sea_orm::DatabaseConnection;
+use sea_orm::{DatabaseConnection, DeleteResult};
 use serde::Deserialize;
 use serde_with::{serde_as, FromInto};
 
@@ -40,32 +40,36 @@ pub struct ProductRequest {
 }
 
 pub async fn create_product(
-    data: web::Json<ProductRequest>,
+    data_product: web::Json<ProductRequest>,
     db: web::Data<DatabaseConnection>,
-) -> HttpResponse {
-    match product_service::create_product(
-        &db,
-        data.name.clone(),
-        data.description.clone(),
-        data.price,
-    )
-    .await
-    {
-        Ok(product) => HttpResponse::Ok().json(product),
-        Err(_) => HttpResponse::InternalServerError().body("Error najaa"),
-    }
+) -> Result<impl actix_web::Responder, ApiError> {
+    let products = product_service::create_product(&db, data_product.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(products))
+    // match product_service::create_product(
+    //     &db,
+    //     data.name.clone(),
+    //     data.description.clone(),
+    //     data.price,
+    // )
+    // .await
+    // {
+    //     Ok(product) => HttpResponse::Ok().json(product),
+    //     Err(_) => HttpResponse::InternalServerError().body("Error najaa"),
+    // }
 }
 
 pub async fn delete_product(
     db: web::Data<DatabaseConnection>,
     product_id: web::Path<uuid::Uuid>,
-) -> HttpResponse {
-    // let product_id = product_id.into_inner();
-    match product_service::delete_product(&db, product_id.into_inner()).await {
-        Ok(response) if response.rows_affected > 0 => HttpResponse::Ok().body("Deleted"),
-        Ok(_) => HttpResponse::NotFound().body("Product not found"),
-        Err(_) => HttpResponse::InternalServerError().body("Error"),
-    }
+) -> Result<impl actix_web::Responder, ApiError> {
+    let products: DeleteResult =
+        product_service::delete_product(&db, product_id.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(products.rows_affected > 0))
+
+    // match product_service::delete_product(&db, del_product.into_inner()).await {
+    //     Ok(response) if response.rows_affected > 0 => HttpResponse::Ok().body("Deleted"),
+    //     Ok(_) => HttpResponse::NotFound().body("Product not found"),
+    //     Err(_) => HttpResponse::InternalServerError().body("Error"),
 }
 
 pub async fn update_product(

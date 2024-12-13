@@ -1,5 +1,5 @@
 use crate::{controllers::product::ProductRequest, entity::products};
-use rust_decimal::Decimal;
+// use rust_decimal::Decimal;
 use sea_orm::{
     ActiveModelTrait, ActiveValue::NotSet, DatabaseConnection, DbErr, DeleteResult, EntityTrait,
     Set,
@@ -18,15 +18,13 @@ pub async fn get_product_by_id(
 
 pub async fn create_product(
     db: &DatabaseConnection,
-    name: String,
-    description: Option<String>,
-    price: Decimal,
+    data_product: ProductRequest,
 ) -> Result<products::Model, DbErr> {
     let new_product = products::ActiveModel {
         id: Set(uuid::Uuid::new_v4()),
-        name: Set(name),
-        description: Set(description),
-        price: Set(price),
+        name: Set(data_product.name),
+        description: Set(data_product.description),
+        price: Set(data_product.price),
         created_at: Set(chrono::Utc::now()),
     };
     new_product.insert(db).await

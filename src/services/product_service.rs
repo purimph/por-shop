@@ -1,8 +1,6 @@
 use crate::{controllers::product::ProductRequest, entity::products, repository};
-use rust_decimal::Decimal;
-use sea_orm::{
-    DatabaseConnection, DbErr, DeleteResult
-};
+// use rust_decimal::Decimal;
+use sea_orm::{DatabaseConnection, DbErr, DeleteResult};
 
 use super::error::ServiceError;
 
@@ -28,11 +26,9 @@ pub async fn get_product_by_id(
 
 pub async fn create_product(
     db: &DatabaseConnection,
-    name: String,
-    description: Option<String>,
-    price: Decimal,
+    data: ProductRequest,
 ) -> Result<products::Model, DbErr> {
-    repository::product::create_product(db, name, description, price).await
+    repository::product::create_product(db, data).await
 }
 
 pub async fn delete_product(
